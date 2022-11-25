@@ -3,6 +3,7 @@ import axiosClient from "./axiosAPI";
 const GroceryApi = {
     getAll: (params = null) => {
       const url = "/GroceryList";
+      console.log(params);
       return axiosClient.get(url, { params });
     },
     PostItem: (data, params = null) => {
