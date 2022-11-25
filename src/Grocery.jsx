@@ -7,6 +7,7 @@ import SearchForm from './SearchForm';
 
 function Grocery() {
     const [list,setList] = useState([]);
+    
     const [name,setName] = useState(''); //value trong <input> form submit
     const [isEditing,setIsEditing] = useState(false);
     const [editID,setEditID] = useState(null);
