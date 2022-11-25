@@ -12,7 +12,7 @@ function Grocery() {
     const [isEditing,setIsEditing] = useState(false);
     const [editID,setEditID] = useState(null);
     const [alert,setAlert] = useState({show:true,msg:"",type:""});
-
+    const [searchInput,setSearchInput] = useState("");
     const paramDefault = {
         keywords: "",
         PageNumber: 1,
@@ -27,15 +27,11 @@ function Grocery() {
     // GET data from server
     const getAllData = async () => {
         try {
-            if(param.keywords !== "") {
-                showAlert(true,`Search result for ${param.keywords}:`,"success")
-            }
-            if(alert.show) {}
-            else{
-                showAlert(true,"Loading...","loading");
-            }
+            showAlert(true,"Loading...","loading");
             let data = await GroceryApi.getAll(param);
-            setList(data.items);
+            if(data.items.length === 0) {setList((prev)=>([{itemName:"No item found",isDone:false,itemId:1}]))}
+            else{setList(data.items);}
+            
             setPagination(data.pagination);
         }
         catch (error){
@@ -44,22 +40,21 @@ function Grocery() {
         }
         showAlert(false);
     }
-
     useEffect( ()=> {
         getAllData();
     },[param])
 
     const handleSubmit = (e) => {
         e.preventDefault()
-        const itemNameList = list.map( (item) => item.itemName);
+        
         if(!name) {
             //name input empty
             showAlert(true,'Please enter item','danger');
         }
-        else if (itemNameList.includes(name) && !isEditing) {
-            //item duplicated
-            showAlert(true,"Item already exist","danger");
-        }       
+        // else if (itemNameList.includes(name) && !isEditing) {
+        //     //item duplicated
+        //     showAlert(true,"Item already exist","danger");
+        //}       
         else if(name && isEditing) {
             //deal with edit name
             const putAPI = async () => {
@@ -90,8 +85,11 @@ function Grocery() {
                         itemName:name,
                         isDone:false,
                     });
-                    showAlert(true,'New item added','success');
-                    setParam(paramDefault);
+                    if(itemId < 0) {showAlert(true,'Item already exist','danger')}
+                    else{
+                        showAlert(true,'New item added','success');
+                        setParam(paramDefault);
+                    }
                 }
                 catch (error){
                     console.log("fail create new item");
@@ -127,22 +125,20 @@ function Grocery() {
         setEditID(itemId)
         setName(itemName)
     }
-
+    //if removed item is the last on the page -> set param to previous page
     const removeItem = (itemId) => {
-        
         const deleteAPI = async () => {
             try {
                 await GroceryApi.DeleteItem(itemId);
+                getAllData();
                 showAlert(true,"Item removed","danger");
-                setParam(paramDefault);
             }
             catch (error){
                 console.log("Fail delete");
                 showAlert(true,"Fail to delete, please retry later","danger");
-                setParam(paramDefault);
             }
         }
-        deleteAPI();
+        deleteAPI(); 
     }
 
     return (
@@ -159,6 +155,7 @@ function Grocery() {
                         placeholder='e.g. Eggs'
                         value={name||""}
                         onChange={ (e)=> setName(e.target.value)}
+                        onFocus={()=> {setSearchInput("")}}
                     ></input>
                     <button type='submit' className='submit-btn'>
                         {isEditing?"EDIT":"SUBMIT"}
@@ -166,10 +163,11 @@ function Grocery() {
                 </div>
             </form>
 
-            <SearchForm setParam={setParam} />
+            <SearchForm setParam={setParam} searchInput={searchInput} setSearchInput={setSearchInput}/>
             <div className='grocery-container'>
                 <List 
                     items={list} 
+                    setList={setList}
                     removeItem={removeItem} 
                     editItemName={editItemName}
                     editItemStatus={editItemStatus} 
