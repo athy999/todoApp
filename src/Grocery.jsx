@@ -12,7 +12,6 @@ function Grocery() {
     const [isEditing,setIsEditing] = useState(false);
     const [editID,setEditID] = useState(null);
     const [alert,setAlert] = useState({show:true,msg:"",type:""});
-    const [searchInput,setSearchInput] = useState("");
     const paramDefault = {
         keywords: "",
         PageNumber: 1,
@@ -125,12 +124,18 @@ function Grocery() {
         setEditID(itemId)
         setName(itemName)
     }
-    //if removed item is the last on the page -> set param to previous page
     const removeItem = (itemId) => {
         const deleteAPI = async () => {
             try {
                 await GroceryApi.DeleteItem(itemId);
-                getAllData();
+                //if removed item is the last on the page -> set param to previous page
+                // debugger
+                if(list.length === 1) {setParam((prev) => ({
+                    ...prev,
+                    PageNumber: prev.PageNumber - 1,
+                  }))}
+                else{getAllData()}
+                //getAllData()
                 showAlert(true,"Item removed","danger");
             }
             catch (error){
@@ -155,7 +160,6 @@ function Grocery() {
                         placeholder='e.g. Eggs'
                         value={name||""}
                         onChange={ (e)=> setName(e.target.value)}
-                        onFocus={()=> {setSearchInput("")}}
                     ></input>
                     <button type='submit' className='submit-btn'>
                         {isEditing?"EDIT":"SUBMIT"}
@@ -163,7 +167,7 @@ function Grocery() {
                 </div>
             </form>
 
-            <SearchForm setParam={setParam} searchInput={searchInput} setSearchInput={setSearchInput}/>
+            <SearchForm setParam={setParam} showAlert={showAlert}/>
             <div className='grocery-container'>
                 <List 
                     items={list} 
